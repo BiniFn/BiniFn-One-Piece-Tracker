@@ -56,7 +56,8 @@
     adminPanel: $("adminPanel"), lockedView: $("lockedView"), editorView: $("editorView"),
     githubToken: $("githubToken"), unlockButton: $("unlockButton"), unlockMessage: $("unlockMessage"),
     lockButton: $("lockButton"), progressForm: $("progressForm"), chapterInput: $("chapterInput"),
-    statusInput: $("statusInput"), saveButton: $("saveButton"), saveMessage: $("saveMessage")
+    nextChapterButton: $("nextChapterButton"), statusInput: $("statusInput"),
+    saveButton: $("saveButton"), saveMessage: $("saveMessage")
   };
 
   const TOKEN_COOKIE_NAME = "bini_tracker_owner_token";
@@ -246,7 +247,7 @@
   }
 
   async function saveProgress(event) {
-    event.preventDefault();
+    if (event) event.preventDefault();
     if (!ownerToken) {
       lockEditor();
       setMessage(elements.unlockMessage, "You are locked out. Enter your key again.", true);
@@ -265,6 +266,7 @@
     }
 
     elements.saveButton.disabled = true;
+    elements.nextChapterButton.disabled = true;
     elements.saveButton.textContent = "SAVING…";
     setMessage(elements.saveMessage, "Saving to GitHub…");
 
@@ -328,8 +330,24 @@
       setMessage(elements.saveMessage, error.message || "Could not save the update.", true);
     } finally {
       elements.saveButton.disabled = false;
+      elements.nextChapterButton.disabled = false;
       elements.saveButton.textContent = 'SAVE';
     }
+  }
+
+  function saveNextChapter() {
+    const typedChapter = Number(elements.chapterInput.value);
+    const baseChapter = Number.isInteger(typedChapter) && typedChapter > 0
+      ? typedChapter
+      : currentState.chapter;
+
+    if (baseChapter >= 9999) {
+      setMessage(elements.saveMessage, "You have reached the chapter limit.", true);
+      return;
+    }
+
+    elements.chapterInput.value = String(baseChapter + 1);
+    elements.progressForm.requestSubmit();
   }
 
   elements.openAdmin.addEventListener("click", openAdminPanel);
@@ -337,6 +355,7 @@
   elements.unlockButton.addEventListener("click", unlockEditor);
   elements.githubToken.addEventListener("keydown", (event) => { if (event.key === "Enter") unlockEditor(); });
   elements.lockButton.addEventListener("click", lockEditor);
+  elements.nextChapterButton.addEventListener("click", saveNextChapter);
   elements.progressForm.addEventListener("submit", saveProgress);
 
   render(currentState);
