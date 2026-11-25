@@ -59,8 +59,31 @@
     statusInput: $("statusInput"), saveButton: $("saveButton"), saveMessage: $("saveMessage")
   };
 
+  const TOKEN_COOKIE_NAME = "bini_tracker_owner_token";
+  const TOKEN_COOKIE_PATH = "/BiniFn-One-Piece-Tracker/";
+  const TOKEN_COOKIE_MAX_AGE = 30 * 24 * 60 * 60;
+
+  function readOwnerTokenCookie() {
+    const prefix = `${TOKEN_COOKIE_NAME}=`;
+    const entry = document.cookie.split(";").map((item) => item.trim()).find((item) => item.startsWith(prefix));
+    if (!entry) return "";
+    try {
+      return decodeURIComponent(entry.slice(prefix.length));
+    } catch {
+      return "";
+    }
+  }
+
+  function saveOwnerTokenCookie(token) {
+    document.cookie = `${TOKEN_COOKIE_NAME}=${encodeURIComponent(token)}; Max-Age=${TOKEN_COOKIE_MAX_AGE}; Path=${TOKEN_COOKIE_PATH}; SameSite=Strict; Secure`;
+  }
+
+  function deleteOwnerTokenCookie() {
+    document.cookie = `${TOKEN_COOKIE_NAME}=; Max-Age=0; Path=${TOKEN_COOKIE_PATH}; SameSite=Strict; Secure`;
+  }
+
   let currentState = { chapter: 324, status: "Reading Water 7.", updatedAt: null };
-  let ownerToken = "";
+  let ownerToken = readOwnerTokenCookie();
 
   function findArc(chapter) {
     return ARCS.find((arc) => chapter >= arc.start && chapter <= arc.end) || null;
@@ -135,15 +158,37 @@
 
   function openAdminPanel() {
     elements.adminPanel.hidden = false;
+
+    if (ownerToken) {
+      elements.lockedView.hidden = true;
+      elements.editorView.hidden = false;
+      elements.chapterInput.value = String(currentState.chapter);
+      elements.statusInput.value = currentState.status;
+      setMessage(elements.saveMessage, "Login remembered on this device.");
+    } else {
+      elements.lockedView.hidden = false;
+      elements.editorView.hidden = true;
+    }
+
     elements.adminPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function forgetOwnerLogin() {
+    ownerToken = "";
+    deleteOwnerTokenCookie();
+    elements.githubToken.value = "";
+    elements.lockedView.hidden = false;
+    elements.editorView.hidden = true;
+    setMessage(elements.unlockMessage, "Your saved login is no longer valid. Enter your GitHub key again.", true);
   }
 
   function lockEditor() {
     ownerToken = "";
+    deleteOwnerTokenCookie();
     elements.githubToken.value = "";
     elements.lockedView.hidden = false;
     elements.editorView.hidden = true;
-    setMessage(elements.unlockMessage, "");
+    setMessage(elements.unlockMessage, "Logged out. Your saved login was removed from this browser.");
     setMessage(elements.saveMessage, "");
   }
 
@@ -177,12 +222,14 @@
       }
 
       ownerToken = token;
+      saveOwnerTokenCookie(token);
+      elements.githubToken.value = "";
       elements.lockedView.hidden = true;
       elements.editorView.hidden = false;
       elements.chapterInput.value = String(currentState.chapter);
       elements.statusInput.value = currentState.status;
       setMessage(elements.unlockMessage, "");
-      setMessage(elements.saveMessage, `Signed in as ${user.login}.`);
+      setMessage(elements.saveMessage, `Signed in as ${user.login}. This browser will remember you for 30 days.`);
     } catch (error) {
       setMessage(elements.unlockMessage, error.message || "Could not check this key.", true);
     } finally {
@@ -232,6 +279,13 @@
       const existingResponse = await fetch(fileUrl, { headers, cache: "no-store" });
       if (!existingResponse.ok) {
         const problem = await existingResponse.json().catch(() => ({}));
+        if (existingResponse.status === 401) {
+          forgetOwnerLogin();
+          return;
+        }
+        if (existingResponse.status === 403) {
+          throw new Error("This GitHub key does not have permission to edit this repository. Give it Contents: Read and write access.");
+        }
         throw new Error(problem.message || `Could not load the saved data (${existingResponse.status}).`);
       }
       const existingFile = await existingResponse.json();
@@ -253,6 +307,13 @@
       });
       if (!updateResponse.ok) {
         const problem = await updateResponse.json().catch(() => ({}));
+        if (updateResponse.status === 401) {
+          forgetOwnerLogin();
+          return;
+        }
+        if (updateResponse.status === 403) {
+          throw new Error("This GitHub key does not have permission to edit this repository. Give it Contents: Read and write access.");
+        }
         if (updateResponse.status === 409 || updateResponse.status === 422) {
           throw new Error("GitHub detected a file conflict. Reload the page and try again.");
         }
