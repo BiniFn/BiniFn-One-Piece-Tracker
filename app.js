@@ -44,7 +44,7 @@
     { saga: "Four Emperors Saga", name: "Levely", start: 903, end: 908 },
     { saga: "Four Emperors Saga", name: "Wano Country", start: 909, end: 1057 },
     { saga: "Final Saga", name: "Egghead", start: 1058, end: 1125 },
-    { saga: "Final Saga", name: "Elbaph", start: 1126, end: 9999 }
+    { saga: "Final Saga", name: "Elbaph", start: 1126, end: null }
   ];
 
   const $ = (id) => document.getElementById(id);
@@ -88,7 +88,7 @@
   let ownerToken = "";
 
   function findArc(chapter) {
-    return ARCS.find((arc) => chapter >= arc.start && chapter <= arc.end) || null;
+    return ARCS.find((arc) => chapter >= arc.start && (arc.end === null || chapter <= arc.end)) || null;
   }
 
   function formatUpdatedAt(value) {
@@ -111,12 +111,13 @@
     elements.nextChapter.textContent = String(chapter + 1);
 
     if (arc) {
-      const progress = Math.max(0, Math.min(100, ((chapter - arc.start + 1) / (arc.end - arc.start + 1)) * 100));
+      const isOngoing = arc.end === null;
+      const progress = isOngoing ? 0 : Math.max(0, Math.min(100, ((chapter - arc.start + 1) / (arc.end - arc.start + 1)) * 100));
       elements.arcName.textContent = arc.name;
       elements.sagaName.textContent = arc.saga;
-      elements.arcRange.textContent = `Ch. ${arc.start.toLocaleString()}–${arc.end.toLocaleString()}`;
+      elements.arcRange.textContent = `Ch. ${arc.start.toLocaleString()}–${isOngoing ? "Present" : arc.end.toLocaleString()}`;
       elements.arcProgressFill.style.width = `${progress}%`;
-      elements.arcProgressText.textContent = `${Math.round(progress)}%`;
+      elements.arcProgressText.textContent = isOngoing ? "ONGOING" : `${Math.round(progress)}%`;
     } else {
       elements.arcName.textContent = "Not found";
       elements.sagaName.textContent = "Unknown";
