@@ -84,7 +84,8 @@
   }
 
   let currentState = { chapter: 324, status: "Reading Water 7.", updatedAt: null };
-  let ownerToken = readOwnerTokenCookie();
+  // The saved cookie is checked with GitHub before enabling the editor.
+  let ownerToken = "";
 
   function findArc(chapter) {
     return ARCS.find((arc) => chapter >= arc.start && chapter <= arc.end) || null;
@@ -172,6 +173,49 @@
     }
 
     elements.adminPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  async function restoreRememberedAdminLogin() {
+    const savedToken = readOwnerTokenCookie();
+    if (!savedToken) return;
+
+    elements.adminPanel.hidden = false;
+    elements.lockedView.hidden = false;
+    elements.editorView.hidden = true;
+    setMessage(elements.unlockMessage, "Checking your saved login…");
+    elements.adminPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    try {
+      const response = await fetch(`${API_ROOT}/user`, {
+        headers: {
+          "Accept": "application/vnd.github+json",
+          "Authorization": `Bearer ${savedToken}`,
+          "X-GitHub-Api-Version": "2022-11-28"
+        },
+        cache: "no-store"
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        deleteOwnerTokenCookie();
+        setMessage(elements.unlockMessage, "Your saved GitHub login expired. Enter your key again.", true);
+        return;
+      }
+      if (!response.ok) {
+        throw new Error(`Could not verify your saved login (${response.status}). Refresh to try again.`);
+      }
+
+      const user = await response.json();
+      if (!user.login || user.login.toLowerCase() !== OWNER.toLowerCase()) {
+        deleteOwnerTokenCookie();
+        setMessage(elements.unlockMessage, `Only the ${OWNER} GitHub account can edit this page.`, true);
+        return;
+      }
+
+      ownerToken = savedToken;
+      openAdminPanel();
+    } catch (error) {
+      setMessage(elements.unlockMessage, error.message || "Could not verify your saved login. Refresh to try again.", true);
+    }
   }
 
   function forgetOwnerLogin() {
@@ -336,18 +380,25 @@
   }
 
   function saveNextChapter() {
-    const typedChapter = Number(elements.chapterInput.value);
-    const baseChapter = Number.isInteger(typedChapter) && typedChapter > 0
-      ? typedChapter
-      : currentState.chapter;
+    if (!ownerToken) {
+      setMessage(elements.unlockMessage, "Log in before updating your progress.", true);
+      elements.adminPanel.hidden = false;
+      elements.lockedView.hidden = false;
+      elements.editorView.hidden = true;
+      return;
+    }
 
-    if (baseChapter >= 9999) {
-      setMessage(elements.saveMessage, "You have reached the chapter limit.", true);
+    const typedValue = elements.chapterInput.value.trim();
+    const baseChapter = typedValue === "" ? Number(currentState.chapter) : Number(typedValue);
+
+    if (!Number.isInteger(baseChapter) || baseChapter < 1 || baseChapter >= 9999) {
+      setMessage(elements.saveMessage, "Enter a valid chapter from 1 to 9998 before moving to the next one.", true);
       return;
     }
 
     elements.chapterInput.value = String(baseChapter + 1);
-    elements.progressForm.requestSubmit();
+    // Save directly instead of relying on the form's requestSubmit support.
+    void saveProgress();
   }
 
   elements.openAdmin.addEventListener("click", openAdminPanel);
@@ -359,5 +410,5 @@
   elements.progressForm.addEventListener("submit", saveProgress);
 
   render(currentState);
-  loadState();
+  loadState().then(restoreRememberedAdminLogin);
 })();
