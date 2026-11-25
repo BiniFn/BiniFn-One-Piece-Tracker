@@ -6,6 +6,6 @@ window.TRACKER_CONFIG = {
   owner: "BiniFn",
   repo: "BiniFn-One-Piece-Tracker",
   branch: "main",
-  statePath: "Data/state.json",
+  statePath: "data/state.json",
   ownerDisplayName: "Bini"
 };
