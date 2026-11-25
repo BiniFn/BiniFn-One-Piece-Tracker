@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101719">
+  <meta name="description" content="See Bini's One Piece chapter, arc, and status.">
+  <title>Bini's One Piece Tracker</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%23e9b85e'/%3E%3Cpath d='M24 57h52L68 35H32z' fill='%23101719'/%3E%3Cpath d='M50 14v38M50 22l-24 24h48z' fill='%23101719'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Bini's One Piece Tracker home">
+      <span class="brand-mark" aria-hidden="true"><span></span></span>
+      <span class="brand-name">ONE PIECE <b>TRACKER</b></span>
+    </a>
+    <div class="topbar-right">
+      <span class="live-indicator"><i></i> PUBLIC</span>
+      <button class="text-button" id="openAdmin" type="button">EDIT <span aria-hidden="true">↗</span></button>
+    </div>
+  </header>
+
+  <main id="top" class="page-shell">
+    <section class="intro">
+      <div class="eyebrow"><span class="eyebrow-line"></span> BINI'S READING PROGRESS</div>
+      <h1>Bini's One Piece<br><em>progress.</em></h1>
+      <p class="intro-copy">Chapter, arc, and status.</p>
+    </section>
+
+    <section class="main-card" aria-labelledby="progressHeading">
+      <div class="card-topline">
+        <div class="card-label"><span class="compass-icon" aria-hidden="true">✳</span> READING NOW</div>
+        <div class="sync-state" id="syncState"><span class="sync-dot"></span><span id="syncText">Loading…</span></div>
+      </div>
+
+      <div class="position-grid">
+        <div class="chapter-block">
+          <div class="micro-label">CHAPTER</div>
+          <div class="chapter-number" id="chapterNumber">324<span>.</span></div>
+        </div>
+        <div class="arc-block">
+          <div class="micro-label">ARC</div>
+          <h2 id="arcName">Water 7</h2>
+          <div class="arc-meta"><span id="sagaName">Water 7 Saga</span><span class="meta-separator">/</span><span id="arcRange">Ch. 322–374</span></div>
+          <div class="arc-progress-wrap">
+            <div class="arc-progress-track"><div class="arc-progress-fill" id="arcProgressFill"></div></div>
+            <div class="arc-progress-copy"><span>ARC PROGRESS</span><b id="arcProgressText">6%</b></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="status-row">
+        <div class="status-symbol" aria-hidden="true">✎</div>
+        <div class="status-content">
+          <div class="micro-label">STATUS</div>
+          <p id="currentStatus">Reading Water 7.</p>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <span>UPDATED <b id="lastUpdated">Loading…</b></span>
+        <span class="footer-mark">☠ <b>KEEP MOVING FORWARD</b></span>
+      </div>
+    </section>
+
+    <section class="below-grid">
+      <article class="info-card next-card">
+        <div class="micro-label">NEXT CHAPTER</div>
+        <div class="next-chapter"><span>CH.</span><b id="nextChapter">325</b></div>
+      </article>
+    </section>
+
+    <section class="admin-panel" id="adminPanel" hidden aria-labelledby="adminHeading">
+      <div class="admin-heading-row">
+        <div>
+          <div class="eyebrow"><span class="eyebrow-line"></span> EDIT PAGE</div>
+          <h2 id="adminHeading">Edit progress</h2>
+        </div>
+        <button class="close-button" id="closeAdmin" type="button" aria-label="Close owner panel">×</button>
+      </div>
+
+      <div class="locked-view" id="lockedView">
+        <p class="admin-description">Only Bini can edit this page. Enter your GitHub key.</p>
+        <label class="field-label" for="githubToken">GITHUB KEY</label>
+        <div class="token-row">
+          <input id="githubToken" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…">
+          <button class="primary-button" id="unlockButton" type="button">OPEN</button>
+        </div>
+        <p class="field-hint">Your key needs <b>Contents: Read and write</b> access to this repo.</p>
+        <p class="form-message" id="unlockMessage" role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="editor-view" id="editorView" hidden>
+        <div class="owner-badge"><span>✓</span> EDITING <button id="lockButton" type="button">LOCK</button></div>
+        <form id="progressForm">
+          <div class="form-grid">
+            <div class="field-group">
+              <label class="field-label" for="chapterInput">CHAPTER</label>
+              <input id="chapterInput" type="number" min="1" max="9999" step="1" required>
+              <p class="field-hint">The arc updates by itself.</p>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="statusInput">STATUS</label>
+              <input id="statusInput" type="text" maxlength="120" placeholder="e.g. Reading, taking a break…" required>
+              <p class="field-hint">Friends can see this.</p>
+            </div>
+          </div>
+          <div class="save-row">
+            <p class="form-message" id="saveMessage" role="status" aria-live="polite"></p>
+            <button class="primary-button save-button" id="saveButton" type="submit">SAVE <span aria-hidden="true">↗</span></button>
+          </div>
+        </form>
+      </div>
+      <p class="admin-footnote">Changes are saved to GitHub.</p>
+    </section>
+
+    <footer class="site-footer">
+      <span>FAN-MADE ONE PIECE TRACKER</span>
+      <span>NOT AFFILIATED WITH ONE PIECE</span>
+    </footer>
+  </main>
+</body>
+</html>
