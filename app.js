@@ -5,7 +5,7 @@
   const OWNER = String(CONFIG.owner || "BiniFn");
   const REPO = String(CONFIG.repo || "BiniFn-One-Piece-Tracker");
   const BRANCH = String(CONFIG.branch || "main");
-  const STATE_PATH = String(CONFIG.statePath || "Data/state.json");
+  const STATE_PATH = String(CONFIG.statePath || "data/state.json");
   const OWNER_NAME = String(CONFIG.ownerDisplayName || "Bini");
   const API_ROOT = "https://api.github.com";
   const RAW_ROOT = `https://raw.githubusercontent.com/${encodeURIComponent(OWNER)}/${encodeURIComponent(REPO)}/${encodeURIComponent(BRANCH)}`;
@@ -118,7 +118,7 @@
       const response = await fetch(`${RAW_ROOT}/${STATE_PATH}?v=${Date.now()}`, { cache: "no-store" });
       if (!response.ok) throw new Error(`Could not read the public data file (${response.status}).`);
       const data = await response.json();
-      if (!Number.isInteger(Number(data.chapter)) || Number(data.chapter) < 1) throw new Error("The chapter in Data/state.json is invalid.");
+      if (!Number.isInteger(Number(data.chapter)) || Number(data.chapter) < 1) throw new Error("The chapter in data/state.json is invalid.");
       currentState = {
         chapter: Number(data.chapter),
         status: typeof data.status === "string" ? data.status : "No status yet.",
